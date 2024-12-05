@@ -113,37 +113,6 @@ export default function Chat() {
     }
   };
 
-  // Handle button click with full area coverage
-  const handleSendClick = (e: MouseEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    // Only send if not disabled
-    if (!isLoading && input.trim()) {
-      sendMessage();
-    }
-  };
-
-  // Prevent default behavior and stop propagation for input
-  const handleInputClick = (e: MouseEvent<HTMLInputElement>) => {
-    e.stopPropagation();
-    inputRef.current?.focus();
-  };
-
-  // Handle form click to ensure proper interaction
-  const handleFormClick = (e: MouseEvent<HTMLFormElement>) => {
-    e.stopPropagation();
-    inputRef.current?.focus();
-  };
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-[80vh]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-      </div>
-    );
-  }
-
   return (
     <div 
       className="flex flex-col h-[80vh] max-w-2xl mx-auto bg-white rounded-lg shadow-lg overflow-hidden"
@@ -195,7 +164,6 @@ export default function Chat() {
       <form 
         ref={formRef}
         onSubmit={handleSubmit} 
-        onClick={handleFormClick}
         className="p-4 border-t"
       >
         <div className="flex gap-2">
@@ -204,25 +172,26 @@ export default function Chat() {
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onClick={handleInputClick}
             onKeyDown={handleKeyDown}
             placeholder="Type your message..."
             className="flex-1 p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             disabled={isLoading}
           />
           <div 
-            onClick={handleSendClick}
-            className={`rounded-lg transition-colors cursor-pointer 
-              ${isLoading || !input.trim() 
-                ? 'cursor-not-allowed' 
-                : 'hover:bg-blue-600/10 active:bg-blue-600/20'
-              }`}
+            className="relative w-[80px]" 
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (!isLoading && input.trim()) {
+                sendMessage();
+              }
+            }}
           >
             <button
               ref={sendButtonRef}
               type="submit"
               disabled={isLoading || !input.trim()}
-              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors w-full"
+              className="absolute inset-0 w-full h-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
             >
               {isLoading ? (
                 <span className="flex items-center gap-2 justify-center">
