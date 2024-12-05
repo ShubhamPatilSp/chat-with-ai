@@ -113,11 +113,15 @@ export default function Chat() {
     }
   };
 
-  // Handle button click with prevention of event propagation
-  const handleSendClick = (e: MouseEvent<HTMLButtonElement>) => {
+  // Handle button click with full area coverage
+  const handleSendClick = (e: MouseEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
-    sendMessage();
+    
+    // Only send if not disabled
+    if (!isLoading && input.trim()) {
+      sendMessage();
+    }
   };
 
   // Prevent default behavior and stop propagation for input
@@ -206,17 +210,22 @@ export default function Chat() {
             className="flex-1 p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             disabled={isLoading}
           />
-          <button
-            ref={sendButtonRef}
-            type="submit"
+          <div 
             onClick={handleSendClick}
-            disabled={isLoading || !input.trim()}
-            className="relative px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors group"
+            className={`rounded-lg transition-colors cursor-pointer 
+              ${isLoading || !input.trim() 
+                ? 'cursor-not-allowed' 
+                : 'hover:bg-blue-600/10 active:bg-blue-600/20'
+              }`}
           >
-            <div className="absolute inset-0 -m-2 group-hover:bg-blue-500/10 group-active:bg-blue-500/20 rounded-lg"></div>
-            <span className="relative z-10">
+            <button
+              ref={sendButtonRef}
+              type="submit"
+              disabled={isLoading || !input.trim()}
+              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors w-full"
+            >
               {isLoading ? (
-                <span className="flex items-center gap-2">
+                <span className="flex items-center gap-2 justify-center">
                   <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
@@ -226,8 +235,8 @@ export default function Chat() {
               ) : (
                 'Send'
               )}
-            </span>
-          </button>
+            </button>
+          </div>
         </div>
       </form>
     </div>
