@@ -3,8 +3,7 @@
 # dependencies
 /node_modules
 /.pnp
-.pnp.*
-.yarn/*
+.pnp.js
 !.yarn/patches
 !.yarn/plugins
 !.yarn/releases
@@ -23,14 +22,16 @@
 # misc
 .DS_Store
 *.pem
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
 # debug
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-
-# env files (can opt-in for committing if needed)
-.env*
 
 # vercel
 .vercel
