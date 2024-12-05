@@ -68,24 +68,16 @@ export default function Chat() {
 
       const data = await response.json();
       
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to send message');
-      }
+      // Add bot response to chat
+      setMessages(prev => [...prev, { 
+        role: 'bot', 
+        content: data.success ? data.message : data.error,
+        timestamp: new Date().toISOString(),
+        error: !data.success
+      }]);
 
-      if (data.success) {
-        // Add bot response to chat
-        setMessages(prev => [...prev, { 
-          role: 'bot', 
-          content: data.message,
-          timestamp: new Date().toISOString()
-        }]);
-      } else {
-        throw new Error(data.error || 'Failed to get response');
-      }
     } catch (error) {
       console.error('Error sending message:', error);
-      const errorMessage = error instanceof Error ? error.message : 'An error occurred';
-      setError(errorMessage);
       // Add error message to chat
       setMessages(prev => [...prev, { 
         role: 'bot', 

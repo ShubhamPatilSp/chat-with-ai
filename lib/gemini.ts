@@ -1,13 +1,66 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-const apiKey = process.env.GEMINI_API_KEY;
+// Simple in-memory request tracking
+const requestTracker = {
+  lastRequestTime: 0,
+  requestCount: 0,
+  resetTime: 0
+};
 
-if (!apiKey) {
-  throw new Error('Missing GEMINI_API_KEY environment variable');
+// Rate limit settings
+const RATE_LIMIT = {
+  requests: 5,      // Number of requests allowed
+  window: 60000,    // Time window in milliseconds (1 minute)
+  cooldown: 3600000 // Cooldown period in milliseconds (1 hour)
+};
+
+// Safely get environment variable
+const getEnvVar = (key: string): string => {
+  const value = process.env[key];
+  if (!value) {
+    console.error(`Environment variable ${key} is not set`);
+    return '';
+  }
+  return value;
+};
+
+const apiKey = getEnvVar('GEMINI_API_KEY');
+const genAI = apiKey ? new GoogleGenerativeAI(apiKey) : null;
+const model = genAI?.getGenerativeModel({ model: "gemini-pro" });
+
+// Check if we're currently rate limited
+function isRateLimited(): boolean {
+  const now = Date.now();
+
+  // Reset counter if we're in a new window
+  if (now - requestTracker.lastRequestTime > RATE_LIMIT.window) {
+    requestTracker.requestCount = 0;
+    requestTracker.resetTime = 0;
+  }
+
+  // Check if we're in cooldown
+  if (requestTracker.resetTime > now) {
+    return true;
+  }
+
+  // Update tracker
+  requestTracker.lastRequestTime = now;
+  requestTracker.requestCount++;
+
+  // If we've exceeded the limit, set cooldown
+  if (requestTracker.requestCount > RATE_LIMIT.requests) {
+    requestTracker.resetTime = now + RATE_LIMIT.cooldown;
+    return true;
+  }
+
+  return false;
 }
 
-const genAI = new GoogleGenerativeAI(apiKey);
-const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+// Get remaining cooldown time in minutes
+function getCooldownMinutes(): number {
+  const remaining = Math.max(0, requestTracker.resetTime - Date.now());
+  return Math.ceil(remaining / 60000);
+}
 
 // Utility function to wait with exponential backoff
 async function wait(ms: number) {
@@ -20,6 +73,16 @@ const BASE_DELAY = 2000; // 2 seconds
 const MAX_DELAY = 60000; // 1 minute
 
 export async function generateChatResponse(message: string, retries = MAX_RETRIES): Promise<string> {
+  if (!genAI || !model) {
+    return "I apologize, but I'm not properly configured at the moment. Please check the API key configuration.";
+  }
+
+  // Check rate limiting
+  if (isRateLimited()) {
+    const minutes = getCooldownMinutes();
+    return `I apologize, but I'm currently rate limited. Please try again in ${minutes} minute${minutes === 1 ? '' : 's'}.`;
+  }
+
   try {
     const chat = model.startChat({
       history: [
@@ -33,7 +96,7 @@ export async function generateChatResponse(message: string, retries = MAX_RETRIE
         },
       ],
       generationConfig: {
-        maxOutputTokens: 250, // Reduced to help with rate limits
+        maxOutputTokens: 150, // Further reduced to help with rate limits
         temperature: 0.7,
       },
     });
@@ -53,20 +116,16 @@ export async function generateChatResponse(message: string, retries = MAX_RETRIE
       return generateChatResponse(message, retries - 1);
     }
 
-    // Handle specific error cases
+    // Return user-friendly messages for other errors
     if (error?.status === 401) {
-      throw new Error('Invalid API key. Please check your GEMINI_API_KEY environment variable.');
+      return "I apologize, but there seems to be an authentication issue. Please check the API key configuration.";
     } else if (error?.status === 403) {
-      throw new Error('API key does not have access to Gemini Pro.');
+      return "I apologize, but the API key doesn't have proper access rights.";
     } else if (error?.status === 500) {
-      throw new Error('Gemini service is experiencing issues. Please try again later.');
+      return "I apologize, but the AI service is experiencing technical difficulties. Please try again later.";
     }
 
     // If we've exhausted all retries or hit a non-retryable error
-    if (retries === 0) {
-      return "I apologize, but I'm currently experiencing high traffic. Please try again in a few minutes.";
-    }
-
-    throw new Error('Failed to generate response. Please try again.');
+    return "I apologize, but I'm currently experiencing high traffic. Please try again in a few minutes.";
   }
 }
