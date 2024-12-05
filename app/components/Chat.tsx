@@ -15,7 +15,6 @@ export default function Chat() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const [isInitialized, setIsInitialized] = useState(false);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -26,41 +25,24 @@ export default function Chat() {
   }, [messages]);
 
   useEffect(() => {
-    // Initialize database and load chat history when component mounts
-    const initAndLoadChat = async () => {
-      if (isInitialized) return;
-      
+    // Initialize database
+    const initDatabase = async () => {
       try {
         setIsLoading(true);
-        // Initialize database first
         const initResponse = await fetch('/api/init');
         if (!initResponse.ok) {
           throw new Error('Failed to initialize database');
         }
-
-        // Then load chat history
-        const response = await fetch('/api/chat');
-        if (!response.ok) throw new Error('Failed to load chat history');
-        
-        const data = await response.json();
-        if (data.success && data.history) {
-          const formattedHistory = data.history.map((msg: any) => ([
-            { role: 'user', content: msg.user_message, timestamp: msg.timestamp },
-            { role: 'bot', content: msg.bot_message, timestamp: msg.timestamp }
-          ])).flat();
-          setMessages(formattedHistory);
-          setIsInitialized(true);
-        }
       } catch (error) {
-        console.error('Error initializing and loading chat:', error);
-        setError(error instanceof Error ? error.message : 'Failed to initialize chat');
+        console.error('Error initializing database:', error);
+        setError(error instanceof Error ? error.message : 'Failed to initialize database');
       } finally {
         setIsLoading(false);
       }
     };
 
-    initAndLoadChat();
-  }, [isInitialized]);
+    initDatabase();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -116,7 +98,7 @@ export default function Chat() {
     }
   };
 
-  if (!isInitialized && isLoading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-[80vh]">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>

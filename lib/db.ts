@@ -11,20 +11,13 @@ export const db = createClient({
   authToken,
 });
 
-// Initialize the chat history table
+// Simple database health check
 export async function initializeDatabase() {
   try {
-    await db.execute(`
-      CREATE TABLE IF NOT EXISTS chat_history (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_message TEXT NOT NULL,
-        bot_message TEXT NOT NULL,
-        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-    console.log("Database initialized successfully");
+    await db.execute(`SELECT 1`);
+    console.log("Database connection verified");
   } catch (error) {
-    console.error("Error initializing database:", error);
+    console.error("Error connecting to database:", error);
     throw error;
   }
 }
