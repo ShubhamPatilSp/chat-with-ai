@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, FormEvent, KeyboardEvent } from 'react';
+import { useState, useEffect, useRef, FormEvent, KeyboardEvent, MouseEvent } from 'react';
 
 interface Message {
   role: 'user' | 'bot';
@@ -16,6 +16,7 @@ export default function Chat() {
   const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const sendButtonRef = useRef<HTMLButtonElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -25,9 +26,27 @@ export default function Chat() {
     scrollToBottom();
   }, [messages]);
 
-  // Focus input on component mount
+  // Focus input on component mount and add global click handler
   useEffect(() => {
     inputRef.current?.focus();
+
+    // Global click handler to ensure input focus
+    const handleGlobalClick = (e: MouseEvent) => {
+      const isClickInsideChat = e.currentTarget && 
+        (e.currentTarget as HTMLElement).contains(e.target as Node);
+      
+      if (isClickInsideChat) {
+        inputRef.current?.focus();
+      }
+    };
+
+    // Add event listener to document
+    document.addEventListener('click', handleGlobalClick as EventListener);
+
+    // Cleanup listener
+    return () => {
+      document.removeEventListener('click', handleGlobalClick as EventListener);
+    };
   }, []);
 
   const sendMessage = async () => {
@@ -93,6 +112,19 @@ export default function Chat() {
     }
   };
 
+  // Handle button click with prevention of event propagation
+  const handleSendClick = (e: MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    sendMessage();
+  };
+
+  // Prevent default behavior and stop propagation for input
+  const handleInputClick = (e: MouseEvent<HTMLInputElement>) => {
+    e.stopPropagation();
+    inputRef.current?.focus();
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-[80vh]">
@@ -102,7 +134,10 @@ export default function Chat() {
   }
 
   return (
-    <div className="flex flex-col h-[80vh] max-w-2xl mx-auto bg-white rounded-lg shadow-lg overflow-hidden">
+    <div 
+      className="flex flex-col h-[80vh] max-w-2xl mx-auto bg-white rounded-lg shadow-lg overflow-hidden"
+      onClick={(e) => e.stopPropagation()}
+    >
       {error && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
           <span className="block sm:inline">{error}</span>
@@ -153,13 +188,16 @@ export default function Chat() {
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
+            onClick={handleInputClick}
             onKeyDown={handleKeyDown}
             placeholder="Type your message..."
             className="flex-1 p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             disabled={isLoading}
           />
           <button
+            ref={sendButtonRef}
             type="submit"
+            onClick={handleSendClick}
             disabled={isLoading || !input.trim()}
             className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
           >
