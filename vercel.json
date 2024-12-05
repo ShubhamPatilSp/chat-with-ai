@@ -4,8 +4,8 @@
   "installCommand": "npm install",
   "framework": "nextjs",
   "env": {
-    "GEMINI_API_KEY": "@gemini_api_key",
-    "TURSO_DB_URL": "@turso_db_url",
-    "TURSO_AUTH_TOKEN": "@turso_auth_token"
+    "GEMINI_API_KEY": "AIzaSyCc11OrAiYoJuVMpuTMiydxLTT7Q5m6nTA",
+    "TURSO_DB_URL": "https://demo-web-app-shubhampatilsp.aws-us-east-1.turso.io",
+    "TURSO_AUTH_TOKEN": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzMyMTEwODIsImlhdCI6MTczMzIwNzQ4MiwiaWQiOiJmOWY0YWQyYS02ODk1LTRiZWYtYjI5MS0wYzkyM2IzNmQyNDUifQ.s0MUzHdKruSAMsvUAJks64GcoDHqhwlND_S1_N1Ouw0LylET9TxS7jmv1hLejwZdMTtiaHwEiduFNVKjr9efBQ"
   }
 }
