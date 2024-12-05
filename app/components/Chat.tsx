@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, FormEvent, KeyboardEvent } from 'react';
 
 interface Message {
   role: 'user' | 'bot';
@@ -15,6 +15,7 @@ export default function Chat() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -24,31 +25,17 @@ export default function Chat() {
     scrollToBottom();
   }, [messages]);
 
+  // Focus input on component mount
   useEffect(() => {
-    // Initialize database
-    const initDatabase = async () => {
-      try {
-        setIsLoading(true);
-        const initResponse = await fetch('/api/init');
-        if (!initResponse.ok) {
-          throw new Error('Failed to initialize database');
-        }
-      } catch (error) {
-        console.error('Error initializing database:', error);
-        setError(error instanceof Error ? error.message : 'Failed to initialize database');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    initDatabase();
+    inputRef.current?.focus();
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim() || isLoading) return;
-
+  const sendMessage = async () => {
     const userMessage = input.trim();
+    
+    // Prevent sending empty or loading messages
+    if (!userMessage || isLoading) return;
+
     setInput('');
     setIsLoading(true);
     setError(null);
@@ -87,6 +74,22 @@ export default function Chat() {
       }]);
     } finally {
       setIsLoading(false);
+      // Refocus input after sending
+      inputRef.current?.focus();
+    }
+  };
+
+  // Handle form submission
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    sendMessage();
+  };
+
+  // Handle keyboard enter key
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
     }
   };
 
@@ -146,16 +149,18 @@ export default function Chat() {
       <form onSubmit={handleSubmit} className="p-4 border-t">
         <div className="flex gap-2">
           <input
+            ref={inputRef}
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
             placeholder="Type your message..."
             className="flex-1 p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             disabled={isLoading}
           />
           <button
             type="submit"
-            disabled={isLoading}
+            disabled={isLoading || !input.trim()}
             className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
           >
             {isLoading ? (
